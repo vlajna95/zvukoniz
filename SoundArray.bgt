@@ -1,0 +1,251 @@
+#include "dynamic_menu.bgt"
+sound music;
+sound[] tone(4);
+sound error_sound;
+sound goodbye;
+tts_voice voice;
+string game_title = "SoundArray";
+string version = "1.2";
+file scores;
+calendar date;
+
+void main() {
+// set_sound_storage("sounds_en.dat");
+music.load("en/music.ogg");
+music.volume = -15;
+tone[0].load("en/1.ogg");
+tone[1].load("en/2.ogg");
+tone[2].load("en/3.ogg");
+tone[3].load("en/4.ogg");
+error_sound.load("en/error.ogg");
+goodbye.load("en/goodbye.ogg");
+show_game_window(game_title);
+intro_sound("en/intro.ogg");
+main_menu();
+}
+
+void main_menu() {
+dynamic_menu menu;
+menu.allow_escape = true;
+menu.set_callback(my_functions,"");
+menu.wrap = true;
+menu.add_item("en/menu1.ogg");
+menu.add_item("en/menu2.ogg");
+menu.add_item("en/menu3.ogg");
+menu.add_item("en/menu4.ogg");
+menu.add_item("en/menu5.ogg");
+music.play_looped();
+int choice;
+do {
+choice = menu.run("en/greetings.ogg", false);
+if(choice == 1) {
+music.stop();
+play_round();
+music.play_looped();
+}
+else if(choice == 2) {
+music.stop();
+learn_sounds();
+music.play_looped();
+}
+else if(choice == 3) {
+music.stop();
+about();
+music.play_looped();
+}
+else if(choice == 4) {
+options();
+}
+}
+while(choice != 0 and choice != 5);
+goodbye.play_wait();
+}
+
+void play_round() {
+bool game_over = false;
+int[] the_array;
+int array_length = 0;
+float time_between_sounds = 500;
+float time_between_inputs = 2000;
+do {
+array_length++;
+the_array.resize(array_length);
+the_array[array_length-1] = random(0,3);
+output_array(@the_array, time_between_sounds);
+game_over = input_array(@the_array, time_between_inputs);
+if((array_length%5) == 0) {
+time_between_sounds = time_between_sounds*0.9;
+if(time_between_sounds < 150) {
+time_between_sounds = 150;
+}
+}
+}
+while(!game_over);
+int result = array_length -1;
+voice.speak_wait("The last correctly repeated array has " + result + " sounds.");
+write_scores(result);
+}
+void output_array(int[] @the_array, float time_between_sounds) {
+timer time;
+int current;
+for(uint i=0; i<the_array.length(); i++) {
+if(i > 0) {
+time.restart();
+while(time.elapsed < time_between_sounds) {
+wait(5);
+}
+}
+current = the_array[i];
+play_sound(current);
+}
+while(tone[current].playing) {
+wait(5);
+}
+}
+bool input_array(int[] @the_array, float time_between_inputs) {
+timer time;
+for(uint i=0; i<the_array.length(); i++) {
+time.restart();
+int input = -1;
+while(time.elapsed < time_between_inputs) {
+if(key_pressed(KEY_LEFT)) {
+input = 0;
+}
+else if(key_pressed(KEY_DOWN)) {
+input = 1;
+}
+else if(key_pressed(KEY_RIGHT)) {
+input = 2;
+}
+else if(key_pressed(KEY_UP)) {
+input = 3;
+}
+if(input >= 0) {
+break;
+}
+wait(5);
+}
+if(input != the_array[i]) {
+error_sound.play_wait();
+return true;
+}
+play_sound(input);
+}
+time.restart();
+while(time.elapsed < 1000) {
+wait(5);
+}
+return false;
+}
+
+void learn_sounds() {
+sound practice;
+practice.load("en/practice.ogg");
+practice.play();
+while(!key_pressed(KEY_ESCAPE)) {
+if(key_pressed(KEY_LEFT)) {
+play_sound(0);
+}
+else if(key_pressed(KEY_DOWN)) {
+play_sound(1);
+}
+else if(key_pressed(KEY_RIGHT)) {
+play_sound(2);
+}
+else if(key_pressed(KEY_UP)) {
+play_sound(3);
+}
+wait(5);
+}
+}
+void play_sound(int i) {
+tone[i].stop();
+tone[i].play();
+}
+
+void about() {
+// voice.speak_wait(game_title + " " + version);
+sound info;
+info.load("en/about.ogg");
+info.play();
+while(info.playing) {
+if(key_pressed(KEY_RETURN) or key_pressed(KEY_SPACE) or key_pressed(KEY_ESCAPE)) {
+info.stop();
+}
+}
+wait(5);
+}
+
+void options() {
+dynamic_menu opt;
+opt.allow_escape = true;
+opt.set_callback(my_functions,"");
+opt.wrap = true;
+opt.add_item("en/opt1.ogg");
+int cho;
+do {
+cho = opt.run("en/opt_run.ogg", false);
+if(cho == 1) {
+file_delete("results.txt");
+sound dsuccess;
+dsuccess.load("en/opt1_true.ogg");
+dsuccess.play_wait();
+}
+}
+while(cho != 0 && cho != 2);
+}
+
+void write_scores(string r) {
+date.reset();
+string year = date.year;
+string month = date.month;
+string day = date.day;
+string hour = date.hour;
+string minute = date.minute;
+string second = date.second;
+if(date.month < 10) {
+month = "0" + month;
+}
+if(date.day < 10) {
+day = "0" + day;
+}
+if(date.hour < 10) {
+hour = "0" + hour;
+}
+if(date.minute < 10) {
+minute = "0" + minute;
+}
+if(date.second < 10) {
+second = "0" + second;
+}
+scores.open("results.txt", "a");
+scores.write(year + "/" + month + "/" + day + " " + hour + ":" + minute + ":" + second + " - The result was " + r + ". \r\n");
+scores.close();
+}
+
+int my_functions(dynamic_menu@ menu, string user_data) {
+while(key_down(KEY_PRIOR)) {
+music.volume = music.volume+1;
+wait(50);
+}
+while(key_down(KEY_NEXT)) {
+music.volume = music.volume-1;
+wait(50);
+}
+if(key_down(KEY_LMENU) && key_pressed(KEY_F4)) {
+goodbye.play_wait();
+exit();
+}
+return 0;
+}
+void intro_sound(string loc) {
+sound intro;
+intro.load(loc);
+intro.play();
+while(intro.playing) {
+if(key_pressed(KEY_RETURN) or key_pressed(KEY_SPACE) or key_pressed(KEY_ESCAPE)) {
+intro.stop();
+}
+wait(5);
+}
+}
