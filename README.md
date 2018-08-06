@@ -7,6 +7,8 @@ Niz se svaki put povećava za jedan zvuk, pa tako postaje sve teže zapamtiti i 
 
 Igrica je prvenstveno namenjena osobama sa oštećenim vidom, pošto se radi o audio tj. zvučnoj igri, ali može je igrati bilo ko - svi delovi igre su pokriveni zvukom i govorom. 
 
+Za sada je dostupna samo engleska verzija, uskoro i na srpskom. 
+
 ## English
 
 A game where you should repeat the array of sounds played by the computer. 
